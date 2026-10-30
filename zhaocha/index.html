@@ -142,11 +142,20 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .card { border: 1px solid var(--line); border-left-width: 4px; border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; }
 .card.y { border-left-color: var(--yellow); } .card.r { border-left-color: var(--red); }
 .card h3 { font-size: 16px; }
-.card dl { margin: 0; display: grid; grid-template-columns: 4.5em 1fr; gap: 4px 10px; font-size: 14px; }
+.card dl { margin: 0; display: grid; grid-template-columns: 5.5em 1fr; gap: 4px 10px; font-size: 14px; }
 .card dt { color: var(--muted); }
 .card dd { margin: 0; min-width: 0; }
 .pitch { border-radius: 8px; padding: 14px 16px; background: var(--desk); font-size: 14px; }
 .pitch b { color: var(--accent); }
+.ans-level { display: grid; gap: 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+.ans-level h2 { font-size: 19px; }
+.ans-level h3 { font-size: 16px; margin: 0; }
+.ans-opts { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.ans-opts li { border: 1.5px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+.ans-opts li span { color: var(--muted); }
+.ans-opts li.pick-good { border-color: var(--green); background: var(--green-bg); }
+.ans-opts li.pick-mid { border-color: var(--yellow); background: var(--yellow-bg); }
+.ans-opts li.pick-bad { border-color: var(--red); background: var(--red-bg); }
 .note { font-size: 12px; color: var(--muted); text-align: center; }
 
 .levels { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -172,11 +181,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="levels" id="levels" role="group" aria-label="選擇關卡"></div>
     <p id="introText"></p>
     <div class="rules">
-      <div class="rule"><span class="chip y">一般疏失 +10</span><b>漏填、填錯、前後矛盾</b><span>會造成退件，保戶要再跑一趟。</span></div>
+      <div class="rule"><span class="chip y">一般疏失 +10</span><b>漏填、填錯、前後矛盾</b><span>需要補正，現場無法處理的才退件。</span></div>
       <div class="rule"><span class="chip r">詐騙警訊 +20</span><b>看起來合規，但不對勁</b><span>要啟動關懷提問或照會本人。</span></div>
       <div class="rule"><span class="chip n">點錯 −3 秒、−5 分</span><b>沒問題的欄位不要亂點</b><span>全部找到且點錯不超過 2 次，才有精準加分和剩餘秒數加分。</span></div>
     </div>
-    <div class="row"><button class="btn" id="startBtn" type="button">開始找碴</button><span class="toast" id="bestLine"></span></div>
+    <div class="row"><button class="btn" id="startBtn" type="button">開始找碴</button><button class="btn ghost" id="answersBtn" type="button">直接看解答</button><span class="toast" id="bestLine"></span></div>
   </section>
 
   <div class="hud" id="hud" hidden>
@@ -221,6 +230,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     </div>
   </section>
 
+  <section class="panel" id="answers" hidden>
+    <span class="eyebrow">審閱用</span>
+    <h2>全部關卡解答</h2>
+    <p style="margin:0;color:var(--muted)">彩色框是題目，數字對應下方的解說。請協助確認「臨櫃怎麼做」和「處理決策」是否符合實務。</p>
+    <div id="answersBody"></div>
+    <div class="row"><button class="btn" id="answersBack" type="button">回到首頁</button></div>
+  </section>
+
   <p class="note">申請書找碴王 · 實習成果展試玩版</p>
 </div>
 
@@ -253,16 +270,16 @@ const FIELDS1 = [
 ];
 
 const ERRORS1 = [
-  { kind: "y", fields: ["idno"], title: "身分證字號少一碼", where: "要保人身分證統一編號只有 9 碼，應為 1 個英文字母加 9 個數字。", impact: "無法核對要保人身分，必須退件補正。", prevent: "線上表單即時驗證字號格式與檢查碼，填錯當下就提示。", auto: true },
-  { kind: "y", fields: ["sign"], title: "要保人簽名空白", where: "要保人簽名欄沒有簽名。", impact: "未經要保人本人簽署的變更不能受理，一定退件。", prevent: "電子簽署，或送件前檢核清單提示必簽欄位。", auto: true },
-  { kind: "r", fields: ["a1all", "a2"], title: "所有通知管道一次全部換掉", where: "地址、E-mail、行動電話全部變更，還勾選「有效保單全部變更」，A2 也把全部保單的電子單據改寄到新 E-mail。", impact: "公司之後寄出的所有通知都到不了原本的保戶。這是冒名變更的常見前奏，接下來可能就是解約或保單借款。", prevent: "系統設定組合警示：聯絡資料全部變更且套用全部保單時，提示同仁關懷提問，並用「原留存電話」照會本人。" },
-  { kind: "r", fields: ["mobile", "agentphone", "sigphone"], title: "保戶的新電話就是業務員的電話", where: "要保人新填的行動電話（A1 和簽章區都是這支），和業務員／送件人欄的電話一模一樣。", impact: "公司要聯絡保戶時，接電話的會是業務員或代辦人，保戶本人完全不知情。申請書背面的業務員聲明，本來就要求確認這種情況。", prevent: "系統自動比對保戶聯絡電話、E-mail 與業務員資料，相同時標示高風險並要求確認關係。" }
+  { kind: "y", fields: ["idno"], title: "身分證字號少一碼", where: "要保人身分證統一編號只有 9 碼，應為 1 個英文字母加 9 個數字。", impact: "無法核對要保人身分，這份申請受理不了。", counter: "請保戶當場更正證號，並出示身分證核對。", prevent: "受理檢核清單提醒核對證號；登打系統時自動檢查字號格式與檢查碼。", auto: true },
+  { kind: "y", fields: ["sign"], title: "要保人簽名空白", where: "要保人簽名欄沒有簽名。", impact: "未經要保人本人簽署的變更不能受理。", counter: "請要保人當場補簽。", prevent: "受理檢核清單列出必簽欄位，收件時逐項勾核。", auto: true },
+  { kind: "r", fields: ["a1all", "a2"], title: "所有通知管道一次全部換掉", where: "地址、E-mail、行動電話全部變更，還勾選「有效保單全部變更」，A2 也把全部保單的電子單據改寄到新 E-mail。", impact: "公司之後寄出的所有通知都到不了原本的保戶。這是冒名變更的常見前奏，接下來可能就是解約或保單借款。", counter: "確認是本人親辦後進行關懷提問，並用「原留存電話」照會本人。", prevent: "系統設定組合提示：聯絡資料全部變更且套用全部保單時，自動提醒櫃員啟動關懷提問與照會。" },
+  { kind: "r", fields: ["mobile", "agentphone", "sigphone"], title: "保戶的新電話就是業務員的電話", where: "要保人新填的行動電話（A1 和簽章區都是這支），和業務員／送件人欄的電話一模一樣。", impact: "公司要聯絡保戶時，接電話的會是業務員或代辦人，保戶本人完全不知情。申請書上的業務員聲明，本來就要求確認這種情況。", counter: "詢問保戶與業務員的關係，並用「原留存電話」照會本人確認。", prevent: "登打時系統自動比對保戶電話、E-mail 與業務員資料，相同時跳出提示。" }
 ];
 
 const OPTIONS1 = [
-  { t: "請保戶補上簽名、日期和住所勾選，資料完整就直接受理。", grade: "bad", pts: 0, fb: "資料補齊不代表沒問題。這份申請有兩個詐騙警訊，直接受理後，公司就再也聯絡不到保戶本人。" },
-  { t: "退件，請保戶補正所有缺漏後再重新送件。", grade: "mid", pts: 5, fb: "退件補正是對的，但漏掉了詐騙警訊。下次送件時資料齊全，風險還是在。" },
-  { t: "退件補正，並用「原留存電話」聯繫要保人本人，確認變更是否出於本人意願、為什麼新電話和業務員相同。", grade: "good", pts: 20, fb: "正確。一般疏失用退件處理，詐騙警訊要照會本人。一定要用原留存電話，因為新電話打過去，接的可能就是業務員。" }
+  { t: "請保戶當場補上簽名、更正證號，資料完整就直接受理。", grade: "bad", pts: 0, fb: "資料補齊不代表沒問題。這份申請有兩個詐騙警訊，直接受理後，公司就再也聯絡不到保戶本人。" },
+  { t: "請保戶當場補正所有缺漏，補完就受理。", grade: "mid", pts: 5, fb: "當場補正是對的，但漏掉了詐騙警訊。資料齊全了，風險還是在。" },
+  { t: "請保戶當場補正，並用「原留存電話」聯繫要保人本人，確認變更是否出於本人意願、為什麼新電話和業務員相同。", grade: "good", pts: 20, fb: "正確。一般疏失請保戶當場補正，詐騙警訊要照會本人。一定要用原留存電話，因為新電話打過去，接的可能就是業務員。" }
 ];
 
 const FIELDS2 = [
@@ -300,16 +317,16 @@ const FIELDS2 = [
 ];
 
 const ERRORS2 = [
-  { kind: "y", fields: ["stamp"], title: "診斷證明書沒有醫院關防", where: "診斷證明書只有醫師簽章，醫療院所關防（印章）是空白的。", impact: "無法確認文件真的由醫院開立，需要請保戶回醫院補蓋。", prevent: "送件前檢核清單列出必要章戳；影像系統自動辨識關防是否存在。", auto: true },
-  { kind: "y", fields: ["amt", "amtc"], title: "收據金額大小寫不一致", where: "小寫是 48,600 元，大寫卻是肆萬陸仟捌佰元，也就是 46,800 元。", impact: "無法確認實際醫療費用，要向醫院查證或請保戶補正。", prevent: "系統讀取收據金額後，自動比對大小寫是否一致。", auto: true },
-  { kind: "r", fields: ["payacct"], title: "理賠金要匯給別人", where: "醫療保險金的受益人是被保險人本人，但領取方式填的匯款帳戶戶名卻是「張家銘」。", impact: "理賠金可能被代辦業者或詐騙集團拿走。常見話術是「我幫你代辦理賠，抽成就好」。", prevent: "系統自動比對戶名與被保險人，不一致時要求照會本人並確認授權。" },
-  { kind: "r", fields: ["accdate"], title: "投保不到三週就住院開刀", where: "契約 9 月 1 日才生效，9 月 18 日就因疾病就診，9 月 20 日住院手術。", impact: "投保後短期內就因疾病出險，可能是投保前就已發病卻未告知，是理賠審查要特別留意的重點。", prevent: "系統自動計算生效日到出險日的天數，短期出險案件標示並轉理賠調查。" }
+  { kind: "y", fields: ["stamp"], title: "診斷證明書沒有醫院關防", where: "診斷證明書只有醫師簽章，醫療院所關防（印章）是空白的。", impact: "無法確認文件真的由醫院開立。", counter: "現場無法補正，需退件，請保戶回醫院補蓋關防後再送件。", prevent: "受理檢核清單列出各項附件必要的章戳，收件時逐項勾核，不必等到後端審核才發現。", auto: true },
+  { kind: "y", fields: ["amt", "amtc"], title: "收據金額大小寫不一致", where: "小寫是 48,600 元，大寫卻是肆萬陸仟捌佰元，也就是 46,800 元。", impact: "無法確認實際醫療費用。", counter: "收據是醫院開立的，現場無法更正，需退件請保戶回醫院更正或重新開立。", prevent: "受理檢核清單提醒核對收據金額大小寫；登打時系統自動比對。", auto: true },
+  { kind: "r", fields: ["payacct"], title: "理賠金要匯給別人", where: "醫療保險金的受益人是被保險人本人，但領取方式填的匯款帳戶戶名卻是「張家銘」。", impact: "理賠金可能被代辦業者或詐騙集團拿走。常見話術是「我幫你代辦理賠，抽成就好」。", counter: "照會被保險人本人，確認為什麼要匯給別人、是否有合法授權。", prevent: "登打時系統自動比對戶名與受益人，不一致時跳出提示。" },
+  { kind: "r", fields: ["accdate"], title: "投保不到三週就住院開刀", where: "契約 9 月 1 日才生效，9 月 18 日就因疾病就診，9 月 20 日住院手術。", impact: "投保後短期內就因疾病出險，可能是投保前就已發病卻未告知，是理賠審查要特別留意的重點。", counter: "照常收件，但在案件上註記，交由理賠審核確認。", prevent: "系統自動計算生效日到出險日的天數，短期出險案件自動標示。" }
 ];
 
 const OPTIONS2 = [
   { t: "請保戶回醫院補蓋章、更正收據金額後，照申請書上的帳戶給付。", grade: "bad", pts: 0, fb: "補正文件只解決了一般疏失。理賠金匯給非本人帳戶，加上投保不久就出險，直接給付的風險很高。" },
-  { t: "退件，請保戶補齊文件後再重新送件。", grade: "mid", pts: 5, fb: "退件補正是對的，但兩個警訊都沒處理。文件補齊後，理賠金還是可能付給錯的人。" },
-  { t: "退件補正；聯繫被保險人本人確認給付帳戶，並把短期出險的案件轉理賠調查。", grade: "good", pts: 20, fb: "正確。一般疏失用退件處理；帳戶不是本人要照會本人，短期出險要交給理賠調查確認。" }
+  { t: "退件，請保戶回醫院補齊文件後再重新送件。", grade: "mid", pts: 5, fb: "醫院文件現場補不了，退件是對的，但兩個警訊都沒處理。文件補齊後，理賠金還是可能付給錯的人。" },
+  { t: "退件請保戶回醫院補文件；同時聯繫被保險人本人確認給付帳戶，並把短期出險的案件註記轉理賠審核。", grade: "good", pts: 20, fb: "正確。醫院文件現場補不了，只能退件；帳戶不是本人要照會本人，短期出險則交給理賠審核確認。" }
 ];
 
 const FIELDS3 = [
@@ -339,15 +356,15 @@ const FIELDS3 = [
 ];
 
 const ERRORS3 = [
-  { kind: "y", fields: ["scope"], title: "終止範圍兩個都勾了", where: "終止範圍只能擇一：附約要一併終止，還是持續到已繳保費期滿。兩個選項同時勾選，互相矛盾。", impact: "無法判斷保戶要怎麼處理附約，需要退件確認。", prevent: "終止範圍設為單選，系統不允許同時勾選。", auto: true },
-  { kind: "y", fields: ["sigphone"], title: "要保人行動電話沒填", where: "申請書註明「請務必填寫行動（聯絡）電話」，以便電訪確認，但這一欄是空白的。", impact: "公司無法電訪要保人確認解約意願，需要補正。", prevent: "行動電話設為必填，沒填就不能送出。", auto: true },
-  { kind: "r", fields: ["reason"], title: "解約是為了「保證配息」的虛擬貨幣投資", where: "終止原因勾了虛擬貨幣，還寫著朋友介紹、保證每月配息 3%。", impact: "「保證獲利、高配息」加上虛擬貨幣，是假投資詐騙最典型的組合。保戶解約後拿到的錢，很可能直接被騙走。", prevent: "終止原因勾選投資類（尤其是虛擬貨幣）時，系統提示同仁進行關懷提問。" },
-  { kind: "r", fields: ["observe"], title: "陪同者在旁遙控保戶", where: "備註欄記錄：陪同的「理財顧問」全程講電話、替保戶回答問題，還一直催促。", impact: "這是臨櫃攔阻詐騙最常見的情境：保戶被詐騙集團操控，自己卻沒有察覺。", prevent: "建立臨櫃關懷提問 SOP，高齡保戶大額解約時，與保戶單獨確認資金用途。" }
+  { kind: "y", fields: ["scope"], title: "終止範圍兩個都勾了", where: "終止範圍只能擇一：附約要一併終止，還是持續到已繳保費期滿。兩個選項同時勾選，互相矛盾。", impact: "無法判斷附約要怎麼處理。", counter: "當場向保戶說明兩個選項的差別，請保戶擇一，並在更正處簽名。", prevent: "受理檢核清單提醒擇一欄位；登打系統時設為單選。", auto: true },
+  { kind: "y", fields: ["sigphone"], title: "要保人行動電話沒填", where: "申請書註明「請務必填寫行動（聯絡）電話」，以便電訪確認，但這一欄是空白的。", impact: "公司無法電訪要保人確認解約意願。", counter: "請保戶當場補填行動電話。", prevent: "受理檢核清單列出必填欄位，收件時逐項勾核。", auto: true },
+  { kind: "r", fields: ["reason"], title: "解約是為了「保證配息」的虛擬貨幣投資", where: "終止原因勾了虛擬貨幣，還寫著朋友介紹、保證每月配息 3%。", impact: "「保證獲利、高配息」加上虛擬貨幣，是假投資詐騙最典型的組合。保戶解約後拿到的錢，很可能直接被騙走。", counter: "與保戶單獨進行關懷提問，了解投資的來源和細節。", prevent: "終止原因勾選投資類（尤其是虛擬貨幣）時，系統提示櫃員啟動關懷提問。" },
+  { kind: "r", fields: ["observe"], title: "陪同者在旁遙控保戶", where: "備註欄記錄：陪同的「理財顧問」全程講電話、替保戶回答問題，還一直催促。", impact: "這是臨櫃攔阻詐騙最常見的情境：保戶被詐騙集團操控，自己卻沒有察覺。", counter: "請陪同者在旁等候，單獨與保戶確認資金用途；有疑慮就暫緩受理並通報主管。", prevent: "建立高齡保戶大額解約的關懷提問 SOP，並由系統標示此類案件。" }
 ];
 
 const OPTIONS3 = [
   { t: "保戶是本人、證件也齊全，請保戶補上電話、確認終止範圍後就受理解約。", grade: "bad", pts: 0, fb: "文件齊全不代表沒有問題。這是典型的假投資詐騙，受理後保戶一生的積蓄可能就被騙走了。" },
-  { t: "退件請保戶補正，並口頭提醒保戶小心詐騙。", grade: "mid", pts: 5, fb: "退件是對的，但當著陪同者的面口頭提醒，很難讓被操控的保戶聽進去。" },
+  { t: "請保戶當場補正，並口頭提醒保戶小心詐騙。", grade: "mid", pts: 5, fb: "當場補正是對的，但當著陪同者的面口頭提醒，很難讓被操控的保戶聽進去。" },
   { t: "請陪同者在旁等候，單獨與保戶進行關懷提問；確認有詐騙疑慮時暫緩受理，依程序通報主管，並聯繫警方協助。", grade: "good", pts: 20, fb: "正確。把保戶和陪同者分開，保戶才說得出真話；確認有疑慮就暫緩受理並通報，這就是臨櫃攔阻詐騙的做法。" }
 ];
 
@@ -355,7 +372,7 @@ const LEVELS = [
   {
     tab: "第一關 · 契約變更", name: "第一關", fields: FIELDS1, errors: ERRORS1, options: OPTIONS1,
     title: "簡易契約內容變更／電子單據申請書",
-    intro: "櫃台剛收到一份「簡易契約內容變更／電子單據申請書」。請在 <b>60 秒</b>內，點出這份申請書裡所有有問題的欄位。有些問題只會造成退件，有些則可能是詐騙的警訊。",
+    intro: "櫃台剛收到一份「簡易契約內容變更／電子單據申請書」。請在 <b>60 秒</b>內，點出這份申請書裡所有有問題的欄位。有些問題只需要補正，有些則可能是詐騙的警訊。",
     sys: ["保單 Q123456789", [["要保人", "陳美玲"], ["被保險人", "陳美玲（與要保人同一人）"], ["原留存行動電話", "0933-208-417"], ["原留存 E-mail", "meiling.c@mail.com"]]],
     foot: "欄位參考 POS211 簡易契變書（2025 年 1 月版）製作，僅供內部訓練使用。表上資料皆為虛構，非真實保戶資訊。"
   },
@@ -556,16 +573,8 @@ function showResult() {
     ["剩餘秒數", precise ? `${state.timeLeft} 秒` : "精準加分達成才計算", timeBonus]
   ];
   $("breakdown").innerHTML = rows.map(([a, b, c]) => `<span>${a}　<span style="color:var(--muted);font-weight:400">${b}</span></span><span>${c < 0 ? "−" + (-c) : "+" + c}</span>`).join("");
-  $("cards").innerHTML = ERRORS.map((e, i) => {
-    const got = state.found.has(i);
-    return `<div class="card ${e.kind}">
-      <div class="row"><span class="chip ${e.kind}">${i + 1} · ${e.kind === "r" ? "詐騙警訊" : "一般疏失"}</span><span class="chip ${got ? "g" : "n"}">${got ? "你找到了" : "沒找到"}</span></div>
-      <h3>${e.title}</h3>
-      <dl><dt>錯在哪</dt><dd>${e.where}</dd><dt>會造成</dt><dd>${e.impact}</dd><dt>怎麼預防</dt><dd>${e.prevent}</dd></dl>
-    </div>`;
-  }).join("");
-  const autoN = ERRORS.filter((e) => e.auto).length;
-  $("pitch").innerHTML = `<b>作業優化提案：</b>這份申請書的 ${ERRORS.length} 個問題中，有 ${autoN} 個一般疏失可以在送件前由系統自動擋下，保戶不必再跑一趟；另外 ${ERRORS.length - autoN} 個詐騙警訊，系統可以自動標示風險，提醒同仁啟動關懷提問。`;
+  $("cards").innerHTML = ERRORS.map((e, i) => cardHtml(e, i, state.found.has(i))).join("");
+  $("pitch").innerHTML = pitchHtml(ERRORS);
   const best = Number(load(`zhaocha-l${cur + 1}-best`) || 0);
   if (total > best) save(`zhaocha-l${cur + 1}-best`, String(total));
   played.add(cur);
@@ -580,6 +589,46 @@ function showResult() {
   $("result").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function cardHtml(e, i, got) {
+  const status = got === null ? "" : `<span class="chip ${got ? "g" : "n"}">${got ? "你找到了" : "沒找到"}</span>`;
+  return `<div class="card ${e.kind}">
+      <div class="row"><span class="chip ${e.kind}">${i + 1} · ${e.kind === "r" ? "詐騙警訊" : "一般疏失"}</span>${status}</div>
+      <h3>${e.title}</h3>
+      <dl><dt>錯在哪</dt><dd>${e.where}</dd><dt>會造成</dt><dd>${e.impact}</dd><dt>臨櫃怎麼做</dt><dd>${e.counter}</dd><dt>優化建議</dt><dd>${e.prevent}</dd></dl>
+    </div>`;
+}
+
+function pitchHtml(errs) {
+  const y = errs.filter((e) => e.kind === "y").length;
+  return `<b>作業優化提案：</b>這份申請書的 ${errs.length} 個問題中，${y} 個一般疏失可以靠「受理檢核清單」在收件當下就發現，請保戶當場補正，減少退件和來回奔波；另外 ${errs.length - y} 個詐騙警訊，可以由系統在登打時自動提示，提醒同仁啟動關懷提問。`;
+}
+
+function gridHtml(fields, errs) {
+  return fields.map((f) => {
+    if (f.sec) return `<div class="sec">${f.sec}</div>`;
+    const idx = errs.findIndex((e) => e.fields.includes(f.id));
+    const mark = idx === -1 ? "" : ` found-${errs[idx].kind}`;
+    const badge = idx !== -1 && errs[idx].fields[0] === f.id ? `<span class="badge ${errs[idx].kind}">${idx + 1}</span>` : "";
+    return `<div class="f ${f.span}${f.half ? " half" : ""}${f.office ? " office" : ""}${mark}"><label>${f.label}</label><div class="v${f.v ? "" : " blank"}">${f.v || "—"}</div>${badge}</div>`;
+  }).join("");
+}
+
+function showAnswers() {
+  $("answersBody").innerHTML = LEVELS.map((L) => `
+    <div class="ans-level">
+      <h2>${L.tab}：${L.title}</h2>
+      <div class="sys"><span class="sys-t">櫃台系統 · ${L.sys[0]} 查詢結果</span><div class="sys-g">${L.sys[1].map(([k, v]) => `<span><small>${k}</small>${v}</span>`).join("")}</div></div>
+      <div class="sheet"><div class="grid">${gridHtml(L.fields, L.errors)}</div></div>
+      <div class="cards">${L.errors.map((e, i) => cardHtml(e, i, null)).join("")}</div>
+      <h3>處理決策</h3>
+      <ul class="ans-opts">${L.options.map((o) => `<li class="pick-${o.grade}"><b>${{ good: "正確 +20", mid: "不夠周全 +5", bad: "危險 0" }[o.grade]}</b>　${o.t}<br><span>${o.fb}</span></li>`).join("")}</ul>
+      <div class="pitch">${pitchHtml(L.errors)}</div>
+    </div>`).join("");
+  $("intro").hidden = true;
+  $("answers").hidden = false;
+  window.scrollTo({ top: 0 });
+}
+
 function reset() {
   $("result").hidden = true; $("sheet").hidden = true; $("decide").hidden = true;
   $("doneBtn").disabled = false;
@@ -589,6 +638,8 @@ function reset() {
 }
 
 $("startBtn").addEventListener("click", start);
+$("answersBtn").addEventListener("click", showAnswers);
+$("answersBack").addEventListener("click", () => { $("answers").hidden = true; $("intro").hidden = false; window.scrollTo({ top: 0 }); });
 $("doneBtn").addEventListener("click", () => finish("找碴完成！"));
 $("toResult").addEventListener("click", showResult);
 $("againBtn").addEventListener("click", reset);
