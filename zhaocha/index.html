@@ -126,13 +126,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 /* Decision + result */
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px 20px; display: grid; gap: 14px; }
 .panel h2 { font-size: 22px; }
-.opts { display: grid; gap: 10px; }
-.opt { text-align: left; background: var(--panel); color: var(--fg); border: 1.5px solid var(--line); border-radius: 8px; padding: 12px 14px; }
-.opt:hover:not(:disabled) { border-color: var(--accent); }
-.opt.pick-good { border-color: var(--green); background: var(--green-bg); }
-.opt.pick-mid { border-color: var(--yellow); background: var(--yellow-bg); }
-.opt.pick-bad { border-color: var(--red); background: var(--red-bg); }
-.fb { border-radius: 8px; padding: 12px 14px; background: var(--desk); }
 .score-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
 .score-big .n { font-family: var(--font-form); font-size: 56px; font-weight: 900; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
 .score-big .t { font-size: 22px; font-weight: 900; }
@@ -150,12 +143,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .ans-level { display: grid; gap: 12px; padding-top: 18px; border-top: 1px solid var(--line); }
 .ans-level h2 { font-size: 19px; }
 .ans-level h3 { font-size: 16px; margin: 0; }
-.ans-opts { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-.ans-opts li { border: 1.5px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
-.ans-opts li span { color: var(--muted); }
-.ans-opts li.pick-good { border-color: var(--green); background: var(--green-bg); }
-.ans-opts li.pick-mid { border-color: var(--yellow); background: var(--yellow-bg); }
-.ans-opts li.pick-bad { border-color: var(--red); background: var(--red-bg); }
 .note { font-size: 12px; color: var(--muted); text-align: center; }
 
 .levels { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -209,14 +196,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="sheet-foot" id="sheetFoot"></div>
   </article>
 
-  <section class="panel" id="decide" hidden>
-    <span class="eyebrow">最後一步 · 處理決策 +20</span>
-    <h2>這份申請，你會怎麼處理？</h2>
-    <div class="opts" id="opts"></div>
-    <div class="fb" id="decideFb" hidden></div>
-    <div class="row"><button class="btn" id="toResult" type="button" hidden>看結果</button></div>
-  </section>
-
   <section class="panel" id="result" hidden>
     <span class="eyebrow" id="resultEyebrow">結果</span>
     <div class="score-big"><span class="n" id="finalScore">0</span><span class="t" id="rankTxt"></span></div>
@@ -233,7 +212,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   <section class="panel" id="answers" hidden>
     <span class="eyebrow">審閱用</span>
     <h2>全部關卡解答</h2>
-    <p style="margin:0;color:var(--muted)">彩色框是題目，數字對應下方的解說。請協助確認「臨櫃怎麼做」和「處理決策」是否符合實務。</p>
+    <p style="margin:0;color:var(--muted)">彩色框是題目，數字對應下方的解說。請協助確認「臨櫃怎麼做」是否符合實務。</p>
     <div id="answersBody"></div>
     <div class="row"><button class="btn" id="answersBack" type="button">回到首頁</button></div>
   </section>
@@ -274,12 +253,6 @@ const ERRORS1 = [
   { kind: "y", fields: ["sign"], title: "要保人簽名空白", where: "要保人簽名欄沒有簽名。", impact: "未經要保人本人簽署的變更不能受理。", counter: "請要保人當場補簽。", prevent: "受理檢核清單列出必簽欄位，收件時逐項勾核。", auto: true },
   { kind: "r", fields: ["a1all", "a2"], title: "所有通知管道一次全部換掉", where: "地址、E-mail、行動電話全部變更，還勾選「有效保單全部變更」，A2 也把全部保單的電子單據改寄到新 E-mail。", impact: "公司之後寄出的所有通知都到不了原本的保戶。這是冒名變更的常見前奏，接下來可能就是解約或保單借款。", counter: "確認是本人親辦後進行關懷提問，並用「原留存電話」照會本人。", prevent: "系統設定組合提示：聯絡資料全部變更且套用全部保單時，自動提醒櫃員啟動關懷提問與照會。" },
   { kind: "r", fields: ["mobile", "agentphone", "sigphone"], title: "保戶的新電話就是業務員的電話", where: "要保人新填的行動電話（A1 和簽章區都是這支），和業務員／送件人欄的電話一模一樣。", impact: "公司要聯絡保戶時，接電話的會是業務員或代辦人，保戶本人完全不知情。申請書上的業務員聲明，本來就要求確認這種情況。", counter: "詢問保戶與業務員的關係，並用「原留存電話」照會本人確認。", prevent: "登打時系統自動比對保戶電話、E-mail 與業務員資料，相同時跳出提示。" }
-];
-
-const OPTIONS1 = [
-  { t: "請保戶當場補上簽名、更正證號，資料完整就直接受理。", grade: "bad", pts: 0, fb: "資料補齊不代表沒問題。這份申請有兩個詐騙警訊，直接受理後，公司就再也聯絡不到保戶本人。" },
-  { t: "請保戶當場補正，再打申請書上「新填的行動電話」，確認是不是本人要變更。", grade: "mid", pts: 5, fb: "有注意到警訊，方向是對的，但打錯電話了。新電話就是業務員的電話，打過去確認不到保戶本人。照會一定要用原留存電話。" },
-  { t: "請保戶當場補正，並用「原留存電話」聯繫要保人本人，確認變更是否出於本人意願、為什麼新電話和業務員相同。", grade: "good", pts: 20, fb: "正確。一般疏失請保戶當場補正，詐騙警訊要照會本人。一定要用原留存電話，因為新電話打過去，接的可能就是業務員。" }
 ];
 
 const FIELDS2 = [
@@ -323,12 +296,6 @@ const ERRORS2 = [
   { kind: "r", fields: ["accdate"], title: "投保不到三週就住院開刀", where: "契約 9 月 1 日才生效，9 月 18 日就因疾病就診，9 月 20 日住院手術。", impact: "投保後短期內就因疾病出險，可能是投保前就已發病卻未告知，是理賠審查要特別留意的重點。", counter: "照常收件，但在案件上註記，交由理賠審核確認。", prevent: "系統自動計算生效日到出險日的天數，短期出險案件自動標示。" }
 ];
 
-const OPTIONS2 = [
-  { t: "請保戶回醫院補蓋章、更正收據金額後，照申請書上的帳戶給付。", grade: "bad", pts: 0, fb: "補正文件只解決了一般疏失。理賠金匯給非本人帳戶，加上投保不久就出險，直接給付的風險很高。" },
-  { t: "退件請保戶回醫院補文件，並請保戶下次把匯款帳戶改成自己的就好。", grade: "mid", pts: 5, fb: "有注意到帳戶的問題，但只處理了表面。沒有了解為什麼要匯給別人，可能有代辦或詐騙介入；短期出險也沒有註記交給理賠審核。" },
-  { t: "退件請保戶回醫院補文件；同時聯繫被保險人本人確認給付帳戶，並把短期出險的案件註記轉理賠審核。", grade: "good", pts: 20, fb: "正確。醫院文件現場補不了，只能退件；帳戶不是本人要照會本人，短期出險則交給理賠審核確認。" }
-];
-
 const FIELDS3 = [
   { id: "policy", label: "茲申請保單號碼", v: "W251102345", span: "s3" },
   { id: "appdate", label: "申請日期", v: "民國 115 年 10 月 29 日", span: "s3" },
@@ -359,46 +326,40 @@ const ERRORS3 = [
   { kind: "y", fields: ["scope"], title: "終止範圍兩個都勾了", where: "終止範圍只能擇一：附約要一併終止，還是持續到已繳保費期滿。兩個選項同時勾選，互相矛盾。", impact: "無法判斷附約要怎麼處理。", counter: "當場向保戶說明兩個選項的差別，請保戶擇一，並在更正處簽名。", prevent: "受理檢核清單提醒擇一欄位；登打系統時設為單選。", auto: true },
   { kind: "y", fields: ["sigphone"], title: "要保人行動電話沒填", where: "申請書註明「請務必填寫行動（聯絡）電話」，以便電訪確認，但這一欄是空白的。", impact: "公司無法電訪要保人確認解約意願。", counter: "請保戶當場補填行動電話。", prevent: "受理檢核清單列出必填欄位，收件時逐項勾核。", auto: true },
   { kind: "r", fields: ["reason"], title: "解約是為了「保證配息」的虛擬貨幣投資", where: "終止原因勾了虛擬貨幣，還寫著朋友介紹、保證每月配息 3%。", impact: "「保證獲利、高配息」加上虛擬貨幣，是假投資詐騙最典型的組合。保戶解約後拿到的錢，很可能直接被騙走。", counter: "與保戶單獨進行關懷提問，了解投資的來源和細節。", prevent: "終止原因勾選投資類（尤其是虛擬貨幣）時，系統提示櫃員啟動關懷提問。" },
-  { kind: "r", fields: ["observe"], title: "陪同者在旁遙控保戶", where: "備註欄記錄：陪同的「理財顧問」全程講電話、替保戶回答問題，還一直催促。", impact: "這是臨櫃攔阻詐騙最常見的情境：保戶被詐騙集團操控，自己卻沒有察覺。", counter: "請陪同者在旁等候，單獨與保戶確認資金用途；有疑慮就暫緩受理並通報主管。", prevent: "建立高齡保戶大額解約的關懷提問 SOP，並由系統標示此類案件。" }
-];
-
-const OPTIONS3 = [
-  { t: "保戶是本人、證件也齊全，請保戶補上電話、確認終止範圍後就受理解約。", grade: "bad", pts: 0, fb: "文件齊全不代表沒有問題。這是典型的假投資詐騙，受理後保戶一生的積蓄可能就被騙走了。" },
-  { t: "請保戶當場補正，並口頭提醒保戶小心詐騙。", grade: "mid", pts: 5, fb: "當場補正是對的，但當著陪同者的面口頭提醒，很難讓被操控的保戶聽進去。" },
-  { t: "請陪同者在旁等候，單獨與保戶進行關懷提問；確認有詐騙疑慮時暫緩受理，依程序通報主管，並聯繫警方協助。", grade: "good", pts: 20, fb: "正確。把保戶和陪同者分開，保戶才說得出真話；確認有疑慮就暫緩受理並通報，這就是臨櫃攔阻詐騙的做法。" }
+  { kind: "r", fields: ["observe"], title: "陪同者在旁遙控保戶", where: "備註欄記錄：陪同的「理財顧問」全程講電話、替保戶回答問題，還一直催促。", impact: "這是臨櫃攔阻詐騙最常見的情境：保戶被詐騙集團操控，自己卻沒有察覺。", counter: "請陪同者在旁等候，單獨與保戶進行關懷提問、確認資金用途；有疑慮就暫緩受理並通報主管，必要時聯繫警方協助。", prevent: "建立高齡保戶大額解約的關懷提問 SOP，並由系統標示此類案件。" }
 ];
 
 const LEVELS = [
   {
-    tab: "第一關 · 契約變更", name: "第一關", fields: FIELDS1, errors: ERRORS1, options: OPTIONS1,
+    tab: "第一關 · 契約變更", name: "第一關", fields: FIELDS1, errors: ERRORS1,
     title: "簡易契約內容變更／電子單據申請書",
     intro: "櫃台剛收到一份「簡易契約內容變更／電子單據申請書」。請在 <b>60 秒</b>內，點出這份申請書裡所有有問題的欄位。有些問題只需要補正，有些則可能是詐騙的警訊。",
     sys: ["保單 Q123456789", [["要保人", "陳美玲"], ["被保險人", "陳美玲（與要保人同一人）"], ["原留存行動電話", "0933-208-417"], ["原留存 E-mail", "meiling.c@mail.com"]]],
     foot: "欄位參考 POS211 簡易契變書（2025 年 1 月版）製作，僅供內部訓練使用。表上資料皆為虛構，非真實保戶資訊。"
   },
   {
-    tab: "第二關 · 保險金申請", name: "第二關", fields: FIELDS2, errors: ERRORS2, options: OPTIONS2,
+    tab: "第二關 · 保險金申請", name: "第二關", fields: FIELDS2, errors: ERRORS2,
     title: "保險金申請書",
     intro: "理賠櫃台收到一份「保險金申請書」，申請住院醫療理賠，並附上診斷證明書和醫療費用收據。請在 <b>60 秒</b>內，對照上方的系統資料，點出所有有問題的欄位。",
     sys: ["保單 H260901234", [["被保險人", "林雅婷（與要保人同一人）"], ["契約生效日", "民國 115 年 9 月 1 日"], ["承保內容", "住院醫療日額 2,000 元、手術醫療"], ["醫療保險金受益人", "被保險人本人"]]],
     foot: "申請書欄位參考保險金申請書（115/04/01 版）製作，診斷證明書與收據為簡化示意，僅供內部訓練使用。醫院、銀行與人名皆為虛構，非真實保戶資訊。"
   },
   {
-    tab: "第三關 · 解約申請", name: "第三關", fields: FIELDS3, errors: ERRORS3, options: OPTIONS3,
+    tab: "第三關 · 解約申請", name: "第三關", fields: FIELDS3, errors: ERRORS3,
     title: "保險單終止契約申請書",
     intro: "一位年長保戶在一名「理財顧問」的陪同下，到櫃台申請解約。請在 <b>60 秒</b>內，對照上方的系統資料，點出申請書裡所有有問題的地方。這一關是臨櫃攔阻詐騙最常見的情境。",
     sys: ["保單 W251102345", [["要保人／被保險人", "黃秀琴（69 歲）"], ["保單年度", "第 12 年"], ["預估解約金", "約 1,860,000 元"], ["原留存給付帳戶", "黃秀琴（末四碼 3307）"]]],
     foot: "欄位參考 POS137 保險單終止契約申請書（2026 年 9 月版）製作，僅供內部訓練使用。人名、銀行與數字皆為虛構，非真實保戶資訊。"
   }
 ];
-let FIELDS, ERRORS, OPTIONS, cur = 0;
+let FIELDS, ERRORS, cur = 0;
 const played = new Set();
 let nextTarget = null;
 
 function setLevel(i) {
   cur = i;
   const L = LEVELS[i];
-  FIELDS = L.fields; ERRORS = L.errors; OPTIONS = L.options;
+  FIELDS = L.fields; ERRORS = L.errors;
   $("introEyebrow").textContent = `櫃台受理挑戰 · ${L.name}`;
   $("introText").innerHTML = L.intro;
   $("sheetTitle").textContent = L.title;
@@ -451,9 +412,9 @@ function fieldEl(id) { return document.querySelector(`.f[data-id="${id}"]`); }
 function toast(msg, cls) { const t = $("toast"); t.textContent = msg; t.className = "toast " + (cls || ""); }
 
 function start() {
-  state = { left: TIME * 1000, found: new Set(), score: 0, wrong: 0, running: true, decision: null };
+  state = { left: TIME * 1000, found: new Set(), score: 0, wrong: 0, running: true };
   render();
-  $("intro").hidden = true; $("result").hidden = true; $("decide").hidden = true;
+  $("intro").hidden = true; $("result").hidden = true;
   $("hud").hidden = false; $("sheet").hidden = false;
   $("totalTxt").textContent = ERRORS.length;
   updateHud();
@@ -521,47 +482,18 @@ function finish(msg) {
   ERRORS.forEach((e, i) => { if (!state.found.has(i)) markError(i, "m"); });
   toast(`${msg} 虛線框是沒找到的問題，結果頁會逐項說明。`);
   $("doneBtn").disabled = true;
-  showDecision();
-}
-
-function showDecision() {
-  const box = $("opts");
-  box.innerHTML = "";
-  $("decideFb").hidden = true; $("toResult").hidden = true;
-  OPTIONS.forEach((o, i) => {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "opt"; b.textContent = o.t; b.id = "opt" + i;
-    b.addEventListener("click", () => decide(i));
-    box.appendChild(b);
-  });
-  $("decide").hidden = false;
-  $("decide").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function decide(i) {
-  if (state.decision !== null) return;
-  state.decision = i;
-  const o = OPTIONS[i];
-  document.querySelectorAll(".opt").forEach((b, j) => {
-    b.disabled = true;
-    if (j === i) b.classList.add("pick-" + o.grade);
-    else if (OPTIONS[j].grade === "good") b.classList.add("pick-good");
-  });
-  const fb = $("decideFb");
-  fb.textContent = o.fb; fb.hidden = false;
-  $("toResult").hidden = false;
+  showResult();
 }
 
 function showResult() {
   const y = [...state.found].filter((i) => ERRORS[i].kind === "y").length;
   const r = [...state.found].filter((i) => ERRORS[i].kind === "r").length;
   const all = state.found.size === ERRORS.length;
-  const dPts = OPTIONS[state.decision].pts;
   const precise = all && state.wrong <= 2;
   const timeBonus = precise ? state.timeLeft : 0;
   const findPts = Math.max(0, y * 10 + r * 20 - state.wrong * 5);
-  const total = findPts + (precise ? 30 : 0) + dPts + timeBonus;
-  const rank = total >= 120 ? "找碴王" : total >= 80 ? "找碴高手" : total >= 40 ? "見習找碴員" : "找碴新手";
+  const total = findPts + (precise ? 30 : 0) + timeBonus;
+  const rank = total >= 110 ? "找碴王" : total >= 70 ? "找碴高手" : total >= 40 ? "見習找碴員" : "找碴新手";
   $("finalScore").textContent = total;
   $("rankTxt").textContent = rank;
   const rows = [
@@ -569,7 +501,6 @@ function showResult() {
     ["詐騙警訊", `${r} / ${ERRORS.filter((e) => e.kind === "r").length} × 20`, r * 20],
     ["點錯扣分", `${state.wrong} 次 × 5（最低扣到 0）`, findPts - (y * 10 + r * 20)],
     ["精準加分", precise ? "達成" : "全部找到且點錯 ≤ 2 次", precise ? 30 : 0],
-    ["處理決策", ["危險", "不夠周全", "正確"][["bad", "mid", "good"].indexOf(OPTIONS[state.decision].grade)], dPts],
     ["剩餘秒數", precise ? `${state.timeLeft} 秒` : "精準加分達成才計算", timeBonus]
   ];
   $("breakdown").innerHTML = rows.map(([a, b, c]) => `<span>${a}　<span style="color:var(--muted);font-weight:400">${b}</span></span><span>${c < 0 ? "−" + (-c) : "+" + c}</span>`).join("");
@@ -583,7 +514,6 @@ function showResult() {
   const nb = $("nextBtn");
   if (nextTarget !== null) { nb.disabled = false; nb.textContent = `下一關：${LEVELS[nextTarget].tab}`; }
   else { nb.disabled = true; nb.textContent = "已完成全部關卡"; }
-  $("decide").hidden = true;
   $("hud").hidden = true;
   $("result").hidden = false;
   $("result").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -620,8 +550,6 @@ function showAnswers() {
       <div class="sys"><span class="sys-t">櫃台系統 · ${L.sys[0]} 查詢結果</span><div class="sys-g">${L.sys[1].map(([k, v]) => `<span><small>${k}</small>${v}</span>`).join("")}</div></div>
       <div class="sheet"><div class="grid">${gridHtml(L.fields, L.errors)}</div></div>
       <div class="cards">${L.errors.map((e, i) => cardHtml(e, i, null)).join("")}</div>
-      <h3>處理決策</h3>
-      <ul class="ans-opts">${L.options.map((o) => `<li class="pick-${o.grade}"><b>${{ good: "正確 +20", mid: "不夠周全 +5", bad: "危險 0" }[o.grade]}</b>　${o.t}<br><span>${o.fb}</span></li>`).join("")}</ul>
       <div class="pitch">${pitchHtml(L.errors)}</div>
     </div>`).join("");
   $("intro").hidden = true;
@@ -630,7 +558,7 @@ function showAnswers() {
 }
 
 function reset() {
-  $("result").hidden = true; $("sheet").hidden = true; $("decide").hidden = true;
+  $("result").hidden = true; $("sheet").hidden = true;
   $("doneBtn").disabled = false;
   $("intro").hidden = false;
   setLevel(cur);
@@ -641,7 +569,6 @@ $("startBtn").addEventListener("click", start);
 $("answersBtn").addEventListener("click", showAnswers);
 $("answersBack").addEventListener("click", () => { $("answers").hidden = true; $("intro").hidden = false; window.scrollTo({ top: 0 }); });
 $("doneBtn").addEventListener("click", () => finish("找碴完成！"));
-$("toResult").addEventListener("click", showResult);
 $("againBtn").addEventListener("click", reset);
 $("nextBtn").addEventListener("click", () => { if (nextTarget !== null) { setLevel(nextTarget); reset(); } });
 setLevel(0);
