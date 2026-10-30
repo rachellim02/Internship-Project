@@ -1,0 +1,597 @@
+<title>申請書找碴王</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;900&display=swap">
+<style>
+/* Layout: a counter desk (page) holding one paper application form; HUD above it, review cards below. */
+:root {
+  --desk: #e8ecef;
+  --fg: #1d2733;
+  --muted: #5b6875;
+  --panel: #ffffff;
+  --line: #c9d1d8;
+  --accent: #1f4e79;      /* service ink blue */
+  --accent-fg: #ffffff;
+  --paper: #fdfcf7;       /* form paper stays paper in both themes */
+  --paper-ink: #1f2f45;
+  --paper-rule: #34495e;
+  --paper-label: #5c6b7a;
+  --yellow: #c98a00;
+  --yellow-bg: #fff4d6;
+  --red: #c4302b;
+  --red-bg: #fde7e5;
+  --green: #2f7d4f;
+  --green-bg: #e3f3e8;
+  --font-ui: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-form: "Noto Serif TC", "PMingLiU", "Songti TC", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #151b22; --fg: #e4e9ee; --muted: #9aa7b4; --panel: #1e2630; --line: #33404d;
+    --accent: #6fa8dc; --accent-fg: #0f1720;
+    --yellow: #f0b429; --yellow-bg: #3a3014; --red: #f0716b; --red-bg: #3d1f1e;
+    --green: #6cc28e; --green-bg: #1b3326;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #151b22; --fg: #e4e9ee; --muted: #9aa7b4; --panel: #1e2630; --line: #33404d;
+  --accent: #6fa8dc; --accent-fg: #0f1720;
+  --yellow: #f0b429; --yellow-bg: #3a3014; --red: #f0716b; --red-bg: #3d1f1e;
+  --green: #6cc28e; --green-bg: #1b3326;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--desk); color: var(--fg); font-family: var(--font-ui);
+  font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 18px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, .f.click:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; color: var(--muted); font-weight: 700; }
+
+/* Intro */
+.intro { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 28px 24px; display: grid; gap: 16px; }
+.intro h1 { font-family: var(--font-form); font-size: clamp(32px, 7vw, 48px); font-weight: 900; color: var(--accent); line-height: 1.15; }
+.intro p { margin: 0; max-width: 62ch; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.rule { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; }
+.rule b { font-size: 14px; }
+.rule span { font-size: 13px; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; width: fit-content; }
+.chip.y { background: var(--yellow-bg); color: var(--yellow); }
+.chip.r { background: var(--red-bg); color: var(--red); }
+.chip.g { background: var(--green-bg); color: var(--green); }
+.chip.n { background: var(--line); color: var(--muted); }
+.btn { border: 0; border-radius: 8px; padding: 12px 22px; font-weight: 700; background: var(--accent); color: var(--accent-fg); }
+.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* HUD */
+.hud { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; display: grid; gap: 8px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--desk); }
+.hud-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.stat { font-variant-numeric: tabular-nums; font-weight: 700; }
+.stat small { font-weight: 500; color: var(--muted); margin-right: 4px; }
+.bar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 100%; background: var(--accent); transition: width .1s linear; }
+.bar i.low { background: var(--red); }
+.toast { font-size: 13px; min-height: 1.6em; color: var(--muted); }
+.toast.bad { color: var(--red); font-weight: 700; }
+.toast.good { color: var(--green); font-weight: 700; }
+
+/* Paper form */
+.sheet { background: var(--paper); color: var(--paper-ink); border: 1px solid var(--line); border-radius: 4px; padding: 22px 20px 18px; box-shadow: 0 1px 0 var(--line), 0 10px 24px -18px rgba(0,0,0,.45); font-family: var(--font-form); }
+.sheet-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 16px; border-bottom: 2px solid var(--paper-rule); padding-bottom: 10px; margin-bottom: 14px; }
+.sheet-head h2 { font-size: 24px; font-weight: 900; letter-spacing: .08em; }
+.sheet-head .meta { font-family: var(--font-ui); font-size: 12px; color: var(--paper-label); text-align: right; }
+.grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--paper-rule); border-left: 1px solid var(--paper-rule); }
+.sec { grid-column: span 6; background: #e9edf1; color: var(--paper-ink); font-family: var(--font-ui); font-weight: 700; font-size: 13px; padding: 4px 10px; border-right: 1px solid var(--paper-rule); border-bottom: 1px solid var(--paper-rule); letter-spacing: .06em; }
+.f { position: relative; border-right: 1px solid var(--paper-rule); border-bottom: 1px solid var(--paper-rule); padding: 6px 10px 8px; min-height: 58px; display: grid; align-content: start; gap: 2px; min-width: 0; }
+.f.s2 { grid-column: span 2; } .f.s3 { grid-column: span 3; } .f.s4 { grid-column: span 4; } .f.s6 { grid-column: span 6; }
+.f label { font-family: var(--font-ui); font-size: 11.5px; color: var(--paper-label); letter-spacing: .04em; }
+.f .v { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.f .v.blank { color: transparent; border-bottom: 1px dotted var(--paper-label); min-height: 1.5em; }
+.f .v .hand { font-family: "Kaiti TC", "BiauKai", "DFKai-SB", var(--font-form); color: #24489a; font-weight: 600; }
+.f.click { cursor: pointer; transition: background .15s; }
+.f.click:hover { background: rgba(31, 78, 121, .06); }
+.f.lock { background: #eeeee8; cursor: default; }
+.f.office { background: repeating-linear-gradient(-45deg, #f0f0ea 0 6px, #f7f7f2 6px 12px); }
+.f.office .v { color: var(--paper-label); font-size: 13px; font-family: var(--font-ui); font-weight: 400; }
+.box { display: inline-block; max-width: 100%; margin-right: 12px; }
+.box::before { content: "☐"; font-size: 17px; }
+.box.on::before { content: "☑"; color: #24489a; }
+.found-y { box-shadow: inset 0 0 0 3px var(--yellow); background: rgba(201, 138, 0, .08) !important; }
+.found-r { box-shadow: inset 0 0 0 3px var(--red); background: rgba(196, 48, 43, .07) !important; }
+.missed { box-shadow: inset 0 0 0 3px transparent; outline: 2px dashed var(--paper-label); outline-offset: -5px; }
+.badge { position: absolute; top: -9px; right: -9px; width: 24px; height: 24px; border-radius: 50%; color: #fff; font: 700 13px/24px var(--font-ui); text-align: center; z-index: 2; }
+.badge.y { background: #c98a00; } .badge.r { background: #c4302b; } .badge.m { background: #7a8794; }
+.shake { animation: shake .35s; }
+@keyframes shake { 20%,60% { transform: translateX(-4px); } 40%,80% { transform: translateX(4px); } }
+.pop { animation: pop .3s ease-out; }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.sys { font-family: var(--font-ui); background: #eef3f8; border: 1px solid #b9c9d9; border-radius: 6px; padding: 8px 12px; margin-bottom: 16px; display: grid; gap: 4px; }
+.sys-t { font-size: 11.5px; font-weight: 700; color: #1f4e79; letter-spacing: .04em; }
+.sys-g { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 14px; font-weight: 500; }
+.sys-g small { color: var(--paper-label); margin-right: 6px; font-size: 12px; }
+.sheet-foot { font-family: var(--font-ui); font-size: 11.5px; color: var(--paper-label); margin-top: 10px; }
+
+/* Decision + result */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px 20px; display: grid; gap: 14px; }
+.panel h2 { font-size: 22px; }
+.opts { display: grid; gap: 10px; }
+.opt { text-align: left; background: var(--panel); color: var(--fg); border: 1.5px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt.pick-good { border-color: var(--green); background: var(--green-bg); }
+.opt.pick-mid { border-color: var(--yellow); background: var(--yellow-bg); }
+.opt.pick-bad { border-color: var(--red); background: var(--red-bg); }
+.fb { border-radius: 8px; padding: 12px 14px; background: var(--desk); }
+.score-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+.score-big .n { font-family: var(--font-form); font-size: 56px; font-weight: 900; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
+.score-big .t { font-size: 22px; font-weight: 900; }
+.breakdown { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; font-size: 14px; max-width: 360px; font-variant-numeric: tabular-nums; }
+.breakdown span:nth-child(even) { text-align: right; font-weight: 700; }
+.cards { display: grid; gap: 10px; }
+.card { border: 1px solid var(--line); border-left-width: 4px; border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; }
+.card.y { border-left-color: var(--yellow); } .card.r { border-left-color: var(--red); }
+.card h3 { font-size: 16px; }
+.card dl { margin: 0; display: grid; grid-template-columns: 4.5em 1fr; gap: 4px 10px; font-size: 14px; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; min-width: 0; }
+.pitch { border-radius: 8px; padding: 14px 16px; background: var(--desk); font-size: 14px; }
+.pitch b { color: var(--accent); }
+.note { font-size: 12px; color: var(--muted); text-align: center; }
+
+.levels { display: flex; flex-wrap: wrap; gap: 8px; }
+.lv { border: 1.5px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 6px 16px; font-weight: 700; font-size: 14px; }
+.lv:hover { border-color: var(--accent); }
+.lv.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.lv:disabled { opacity: .5; cursor: not-allowed; }
+.f .v.stamp-empty { color: var(--paper-label); font-size: 13px; font-weight: 400; font-family: var(--font-ui); }
+@media (max-width: 560px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sec, .f.s2, .f.s3, .f.s4, .f.s6 { grid-column: span 2; }
+  .f.half { grid-column: span 1; }
+  .sheet { padding: 16px 12px 14px; }
+  .sheet-head .meta { text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) { .shake, .pop { animation: none; } .bar i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <section class="intro" id="intro">
+    <span class="eyebrow" id="introEyebrow">櫃台受理挑戰</span>
+    <h1>申請書找碴王</h1>
+    <div class="levels" id="levels" role="group" aria-label="選擇關卡"></div>
+    <p id="introText"></p>
+    <div class="rules">
+      <div class="rule"><span class="chip y">一般疏失 +10</span><b>漏填、填錯、前後矛盾</b><span>會造成退件，保戶要再跑一趟。</span></div>
+      <div class="rule"><span class="chip r">詐騙警訊 +20</span><b>看起來合規，但不對勁</b><span>要啟動關懷提問或照會本人。</span></div>
+      <div class="rule"><span class="chip n">點錯 −3 秒、−5 分</span><b>沒問題的欄位不要亂點</b><span>全部找到且點錯不超過 2 次，才有精準加分和剩餘秒數加分。</span></div>
+    </div>
+    <div class="row"><button class="btn" id="startBtn" type="button">開始找碴</button><span class="toast" id="bestLine"></span></div>
+  </section>
+
+  <div class="hud" id="hud" hidden>
+    <div class="hud-top">
+      <span class="stat"><small>剩餘</small><span id="timeTxt">60.0</span> 秒</span>
+      <span class="stat"><small>已找到</small><span id="foundTxt">0</span> / <span id="totalTxt">6</span></span>
+      <span class="stat"><small>分數</small><span id="scoreTxt">0</span></span>
+      <button class="btn ghost" id="doneBtn" type="button" style="padding:4px 12px;font-size:13px">找碴完成</button>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+    <div class="toast" id="toast">點擊你認為有問題的欄位。</div>
+  </div>
+
+  <article class="sheet" id="sheet" hidden>
+    <div class="sys" id="sys"></div>
+    <div class="sheet-head">
+      <h2 id="sheetTitle"></h2>
+      <div class="meta">訓練用仿製表單</div>
+    </div>
+    <div class="grid" id="formGrid"></div>
+    <div class="sheet-foot" id="sheetFoot"></div>
+  </article>
+
+  <section class="panel" id="decide" hidden>
+    <span class="eyebrow">最後一步 · 處理決策 +20</span>
+    <h2>這份申請，你會怎麼處理？</h2>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="decideFb" hidden></div>
+    <div class="row"><button class="btn" id="toResult" type="button" hidden>看結果</button></div>
+  </section>
+
+  <section class="panel" id="result" hidden>
+    <span class="eyebrow" id="resultEyebrow">結果</span>
+    <div class="score-big"><span class="n" id="finalScore">0</span><span class="t" id="rankTxt"></span></div>
+    <div class="breakdown" id="breakdown"></div>
+    <h2 style="font-size:18px;margin-top:6px">逐項揭曉</h2>
+    <div class="cards" id="cards"></div>
+    <div class="pitch" id="pitch"></div>
+    <div class="row">
+      <button class="btn" id="againBtn" type="button">再玩一次</button>
+      <button class="btn ghost" id="nextBtn" type="button"></button>
+    </div>
+  </section>
+
+  <p class="note">申請書找碴王 · 實習成果展試玩版</p>
+</div>
+
+<script>
+const FIELDS1 = [
+  { id: "policy", label: "保單號碼", v: "Q123456789", span: "s3" },
+  { id: "date", label: "申請日期", v: "民國 115 年 10 月 29 日", span: "s3" },
+  { sec: "A1　要保人／被保險人聯絡資訊變更 · 要保人" },
+  { id: "addr", label: "要保人聯絡地址", v: "241-03　新北市 三重區 重新路三段 88 號 5 樓", span: "s6" },
+  { id: "home", label: "要保人住所（戶籍地址）【請擇一勾選】", v: '<span class="box">如下</span><span class="box on">同上述聯絡地址</span>', span: "s6" },
+  { id: "email", label: "E-mail", v: "ml.chen0314@mail.com", span: "s3" },
+  { id: "mobile", label: "聯絡電話（行動）", v: "0928-617-305", span: "s3" },
+  { id: "a1all", label: "全部保單", v: '<span class="box on">同一要保人有效保單全部變更為以上要保人地址／E-mail／電話</span>', span: "s6" },
+  { sec: "A1　要保人／被保險人聯絡資訊變更 · 被保險人（如變更被保險人相關資料，請於簽名欄簽名）" },
+  { id: "insaddr", label: "被保險人住所（戶籍地址）", v: '<span class="box">如下</span><span class="box">同上述要保人聯絡地址</span><span class="box">同上述要保人住所</span>', span: "s6" },
+  { sec: "A2　電子單據服務　·　A3　繳費管道變更" },
+  { id: "a2", label: "A2 電子單據服務", v: '<span class="box on">同 A1 要保人 E-mail</span><span class="box on">同一要保人有效保單全部申請電子單據</span>', span: "s4" },
+  { id: "a3", label: "A3 繳費管道", v: '<span class="box">變更為自行繳費</span>', span: "s2" },
+  { sec: "業務員／送件人" },
+  { id: "agent", label: "業務員／送件人簽名", v: '<span class="hand">王建宏</span>', span: "s2" },
+  { id: "agentphone", label: "電話", v: "0928-617-305", span: "s2" },
+  { id: "agentno", label: "業務員登錄字號", v: "0113-25806", span: "s2" },
+  { sec: "要保人／被保險人簽章" },
+  { id: "sign", label: "要保人簽名", v: "", span: "s3" },
+  { id: "idno", label: "要保人身分證統一編號", v: "A22345678　生日：51 年 3 月 14 日", span: "s3" },
+  { id: "sigphone", label: "要保人行動（聯絡）電話", v: "0928-617-305", span: "s3" },
+  { id: "inssign", label: "被保險人簽名（與要保人為同一人時，可免簽名）", v: "", span: "s3" },
+  { id: "legal", label: "法定代理人簽名（未滿七歲或無行為能力者適用）", v: "", span: "s6" },
+  { id: "office", label: "受理蓋章（公司填寫）", v: "", span: "s6", office: true }
+];
+
+const ERRORS1 = [
+  { kind: "y", fields: ["idno"], title: "身分證字號少一碼", where: "要保人身分證統一編號只有 9 碼，應為 1 個英文字母加 9 個數字。", impact: "無法核對要保人身分，必須退件補正。", prevent: "線上表單即時驗證字號格式與檢查碼，填錯當下就提示。", auto: true },
+  { kind: "y", fields: ["sign"], title: "要保人簽名空白", where: "要保人簽名欄沒有簽名。", impact: "未經要保人本人簽署的變更不能受理，一定退件。", prevent: "電子簽署，或送件前檢核清單提示必簽欄位。", auto: true },
+  { kind: "r", fields: ["a1all", "a2"], title: "所有通知管道一次全部換掉", where: "地址、E-mail、行動電話全部變更，還勾選「有效保單全部變更」，A2 也把全部保單的電子單據改寄到新 E-mail。", impact: "公司之後寄出的所有通知都到不了原本的保戶。這是冒名變更的常見前奏，接下來可能就是解約或保單借款。", prevent: "系統設定組合警示：聯絡資料全部變更且套用全部保單時，提示同仁關懷提問，並用「原留存電話」照會本人。" },
+  { kind: "r", fields: ["mobile", "agentphone", "sigphone"], title: "保戶的新電話就是業務員的電話", where: "要保人新填的行動電話（A1 和簽章區都是這支），和業務員／送件人欄的電話一模一樣。", impact: "公司要聯絡保戶時，接電話的會是業務員或代辦人，保戶本人完全不知情。申請書背面的業務員聲明，本來就要求確認這種情況。", prevent: "系統自動比對保戶聯絡電話、E-mail 與業務員資料，相同時標示高風險並要求確認關係。" }
+];
+
+const OPTIONS1 = [
+  { t: "請保戶補上簽名、日期和住所勾選，資料完整就直接受理。", grade: "bad", pts: 0, fb: "資料補齊不代表沒問題。這份申請有兩個詐騙警訊，直接受理後，公司就再也聯絡不到保戶本人。" },
+  { t: "退件，請保戶補正所有缺漏後再重新送件。", grade: "mid", pts: 5, fb: "退件補正是對的，但漏掉了詐騙警訊。下次送件時資料齊全，風險還是在。" },
+  { t: "退件補正，並用「原留存電話」聯繫要保人本人，確認變更是否出於本人意願、為什麼新電話和業務員相同。", grade: "good", pts: 20, fb: "正確。一般疏失用退件處理，詐騙警訊要照會本人。一定要用原留存電話，因為新電話打過去，接的可能就是業務員。" }
+];
+
+const FIELDS2 = [
+  { id: "kind", label: "本次申請", v: '<span class="box on">個人保單</span><span class="box">團體保險</span><span class="box">旅平險</span>', span: "s4" },
+  { id: "policy", label: "個人保險 · 保單號碼", v: "H260901234", span: "s2" },
+  { id: "rel", label: "與主被保險人關係", v: '<span class="box on">本人</span><span class="box">配偶</span><span class="box">子女</span><span class="box">父母</span>', span: "s6" },
+  { id: "insured", label: "被保險人姓名", v: "林雅婷", span: "s2", half: true },
+  { id: "idno", label: "身分證統一編號", v: "B223456781", span: "s2", half: true },
+  { id: "birth", label: "出生日期", v: "中華民國 70 年 5 月 8 日", span: "s2" },
+  { id: "phone", label: "聯絡電話", v: "0912-480-631", span: "s2" },
+  { id: "addr", label: "聯絡地址", v: "235-02　新北市 中和區 景平路 120 號 3 樓", span: "s4" },
+  { sec: "領取方式" },
+  { id: "paytype", label: "給付方式", v: '<span class="box on">匯款至受益人帳戶</span><span class="box">保險金信託</span>', span: "s6" },
+  { id: "payacct", label: "戶名／銀行／帳號", v: "戶名：張家銘　仁和銀行 中和分行　通匯代碼 812-0676　帳號 2067-4415-8890-12", span: "s6" },
+  { id: "notify", label: "通知書", v: '<span class="box on">以行動電話簡訊通知（同上聯絡電話）</span><span class="box">E-MAIL</span>', span: "s6" },
+  { sec: "申請類別／申請項目" },
+  { id: "type", label: "申請類別", v: '<span class="box on">疾病</span><span class="box">意外</span>', span: "s2" },
+  { id: "items", label: "申請項目", v: '<span class="box on">醫療</span><span class="box">門診</span><span class="box">重大疾病</span><span class="box">身故</span><span class="box">失能</span>', span: "s4" },
+  { id: "accident", label: "意外事故內容（申請意外險時填寫）", v: "", span: "s6" },
+  { sec: "請務必親自簽名" },
+  { id: "sign", label: "立書人（即被保險人）／受益人簽名", v: '<span class="hand">林雅婷</span>', span: "s3" },
+  { id: "appdate", label: "申請日期", v: "中華民國 115 年 10 月 29 日", span: "s3" },
+  { sec: "檢附文件一　診斷證明書（安和綜合醫院）" },
+  { id: "diag", label: "診斷", v: "急性膽囊炎", span: "s2" },
+  { id: "accdate", label: "初診日期", v: "115 年 9 月 18 日", span: "s2" },
+  { id: "stay", label: "住院期間", v: "115/09/20–09/26，共 7 日", span: "s2" },
+  { id: "surg", label: "手術", v: "115/09/21　腹腔鏡膽囊切除術", span: "s3" },
+  { id: "doc", label: "醫師簽章", v: '<span class="hand">周志遠</span>', span: "s3" },
+  { id: "stamp", label: "醫療院所關防", v: '<span class="stamp-empty">（空白）</span>', span: "s6" },
+  { sec: "檢附文件二　醫療費用收據（安和綜合醫院）" },
+  { id: "rnum", label: "收據號碼", v: "R1150926-0388", span: "s2" },
+  { id: "amt", label: "合計金額（小寫）", v: "NT$ 48,600", span: "s2" },
+  { id: "amtc", label: "合計金額（大寫）", v: "新臺幣肆萬陸仟捌佰元整", span: "s2" },
+  { id: "office", label: "收件單位　受理欄（公司填寫）", v: "", span: "s6", office: true }
+];
+
+const ERRORS2 = [
+  { kind: "y", fields: ["stamp"], title: "診斷證明書沒有醫院關防", where: "診斷證明書只有醫師簽章，醫療院所關防（印章）是空白的。", impact: "無法確認文件真的由醫院開立，需要請保戶回醫院補蓋。", prevent: "送件前檢核清單列出必要章戳；影像系統自動辨識關防是否存在。", auto: true },
+  { kind: "y", fields: ["amt", "amtc"], title: "收據金額大小寫不一致", where: "小寫是 48,600 元，大寫卻是肆萬陸仟捌佰元，也就是 46,800 元。", impact: "無法確認實際醫療費用，要向醫院查證或請保戶補正。", prevent: "系統讀取收據金額後，自動比對大小寫是否一致。", auto: true },
+  { kind: "r", fields: ["payacct"], title: "理賠金要匯給別人", where: "醫療保險金的受益人是被保險人本人，但領取方式填的匯款帳戶戶名卻是「張家銘」。", impact: "理賠金可能被代辦業者或詐騙集團拿走。常見話術是「我幫你代辦理賠，抽成就好」。", prevent: "系統自動比對戶名與被保險人，不一致時要求照會本人並確認授權。" },
+  { kind: "r", fields: ["accdate"], title: "投保不到三週就住院開刀", where: "契約 9 月 1 日才生效，9 月 18 日就因疾病就診，9 月 20 日住院手術。", impact: "投保後短期內就因疾病出險，可能是投保前就已發病卻未告知，是理賠審查要特別留意的重點。", prevent: "系統自動計算生效日到出險日的天數，短期出險案件標示並轉理賠調查。" }
+];
+
+const OPTIONS2 = [
+  { t: "請保戶回醫院補蓋章、更正收據金額後，照申請書上的帳戶給付。", grade: "bad", pts: 0, fb: "補正文件只解決了一般疏失。理賠金匯給非本人帳戶，加上投保不久就出險，直接給付的風險很高。" },
+  { t: "退件，請保戶補齊文件後再重新送件。", grade: "mid", pts: 5, fb: "退件補正是對的，但兩個警訊都沒處理。文件補齊後，理賠金還是可能付給錯的人。" },
+  { t: "退件補正；聯繫被保險人本人確認給付帳戶，並把短期出險的案件轉理賠調查。", grade: "good", pts: 20, fb: "正確。一般疏失用退件處理；帳戶不是本人要照會本人，短期出險要交給理賠調查確認。" }
+];
+
+const FIELDS3 = [
+  { id: "policy", label: "茲申請保單號碼", v: "W251102345", span: "s3" },
+  { id: "appdate", label: "申請日期", v: "民國 115 年 10 月 29 日", span: "s3" },
+  { id: "scope", label: "終止範圍", v: '<span class="box on">主契約、所有附約、附加條款及批註條款一併終止</span><span class="box on">主契約終止；所有附約、附加條款及批註條款持續至當期已繳之保險費期滿後終止</span>', span: "s6" },
+  { sec: "終止本保單的原因（請務必填寫，可複選）" },
+  { id: "r1", label: "1. 保障規劃　2. 費用支出　3. 資金急用", v: '<span class="box">另有投保或加保的規劃</span><span class="box">學費</span><span class="box">醫療費</span><span class="box">友人或親人周轉</span>', span: "s6" },
+  { id: "reason", label: "5. 投資", v: '<span class="box">房地產</span><span class="box">股票／基金</span><span class="box on">虛擬貨幣</span><span class="box on">其他：朋友介紹，保證每月配息 3%</span>', span: "s6" },
+  { sec: "給付方式 · 金融機構匯款（限匯入要保人帳戶）" },
+  { id: "acctname", label: "帳戶姓名", v: "黃秀琴", span: "s2" },
+  { id: "bank", label: "金融機構名稱／分行", v: "安和銀行　大安分行", span: "s2" },
+  { id: "acctno", label: "帳號", v: "0412-0083-3307", span: "s2" },
+  { sec: "業務員／送件人（要保人委託他人辦理時填寫）" },
+  { id: "agent", label: "業務員／送件人簽名", v: "", span: "s3" },
+  { id: "agentphone", label: "電話", v: "", span: "s3" },
+  { sec: "要保人簽章" },
+  { id: "sign", label: "要保人簽名", v: '<span class="hand">黃秀琴</span>', span: "s3" },
+  { id: "idno", label: "身分證統一編號", v: "E221234567", span: "s3" },
+  { id: "birth", label: "出生年月日", v: "46 年 2 月 11 日", span: "s3" },
+  { id: "sigphone", label: "要保人行動（聯絡）電話（請務必填寫）", v: "", span: "s3" },
+  { id: "legal", label: "法定代理人簽名（未滿七足歲或無行為能力者適用）", v: "", span: "s6" },
+  { id: "calltime", label: "方便電訪要保人時間", v: '<span class="box on">上午 9-12 時</span><span class="box">下午 12-18 時</span><span class="box">下午 18-21 時</span>', span: "s6" },
+  { sec: "以下為作業欄位，保戶無需填寫" },
+  { id: "observe", label: "公司使用欄位 · 備註欄", v: "由一名自稱「理財顧問」的男子陪同；男子全程在旁講電話，並替保戶回答問題，催促盡快辦理。", span: "s6" },
+  { id: "office", label: "受理蓋章／文件齊全日／承辦人員", v: "", span: "s6", office: true }
+];
+
+const ERRORS3 = [
+  { kind: "y", fields: ["scope"], title: "終止範圍兩個都勾了", where: "終止範圍只能擇一：附約要一併終止，還是持續到已繳保費期滿。兩個選項同時勾選，互相矛盾。", impact: "無法判斷保戶要怎麼處理附約，需要退件確認。", prevent: "終止範圍設為單選，系統不允許同時勾選。", auto: true },
+  { kind: "y", fields: ["sigphone"], title: "要保人行動電話沒填", where: "申請書註明「請務必填寫行動（聯絡）電話」，以便電訪確認，但這一欄是空白的。", impact: "公司無法電訪要保人確認解約意願，需要補正。", prevent: "行動電話設為必填，沒填就不能送出。", auto: true },
+  { kind: "r", fields: ["reason"], title: "解約是為了「保證配息」的虛擬貨幣投資", where: "終止原因勾了虛擬貨幣，還寫著朋友介紹、保證每月配息 3%。", impact: "「保證獲利、高配息」加上虛擬貨幣，是假投資詐騙最典型的組合。保戶解約後拿到的錢，很可能直接被騙走。", prevent: "終止原因勾選投資類（尤其是虛擬貨幣）時，系統提示同仁進行關懷提問。" },
+  { kind: "r", fields: ["observe"], title: "陪同者在旁遙控保戶", where: "備註欄記錄：陪同的「理財顧問」全程講電話、替保戶回答問題，還一直催促。", impact: "這是臨櫃攔阻詐騙最常見的情境：保戶被詐騙集團操控，自己卻沒有察覺。", prevent: "建立臨櫃關懷提問 SOP，高齡保戶大額解約時，與保戶單獨確認資金用途。" }
+];
+
+const OPTIONS3 = [
+  { t: "保戶是本人、證件也齊全，請保戶補上電話、確認終止範圍後就受理解約。", grade: "bad", pts: 0, fb: "文件齊全不代表沒有問題。這是典型的假投資詐騙，受理後保戶一生的積蓄可能就被騙走了。" },
+  { t: "退件請保戶補正，並口頭提醒保戶小心詐騙。", grade: "mid", pts: 5, fb: "退件是對的，但當著陪同者的面口頭提醒，很難讓被操控的保戶聽進去。" },
+  { t: "請陪同者在旁等候，單獨與保戶進行關懷提問；確認有詐騙疑慮時暫緩受理，依程序通報主管，並聯繫警方協助。", grade: "good", pts: 20, fb: "正確。把保戶和陪同者分開，保戶才說得出真話；確認有疑慮就暫緩受理並通報，這就是臨櫃攔阻詐騙的做法。" }
+];
+
+const LEVELS = [
+  {
+    tab: "第一關 · 契約變更", name: "第一關", fields: FIELDS1, errors: ERRORS1, options: OPTIONS1,
+    title: "簡易契約內容變更／電子單據申請書",
+    intro: "櫃台剛收到一份「簡易契約內容變更／電子單據申請書」。請在 <b>60 秒</b>內，點出這份申請書裡所有有問題的欄位。有些問題只會造成退件，有些則可能是詐騙的警訊。",
+    sys: ["保單 Q123456789", [["要保人", "陳美玲"], ["被保險人", "陳美玲（與要保人同一人）"], ["原留存行動電話", "0933-208-417"], ["原留存 E-mail", "meiling.c@mail.com"]]],
+    foot: "欄位參考 POS211 簡易契變書（2025 年 1 月版）製作，僅供內部訓練使用。表上資料皆為虛構，非真實保戶資訊。"
+  },
+  {
+    tab: "第二關 · 保險金申請", name: "第二關", fields: FIELDS2, errors: ERRORS2, options: OPTIONS2,
+    title: "保險金申請書",
+    intro: "理賠櫃台收到一份「保險金申請書」，申請住院醫療理賠，並附上診斷證明書和醫療費用收據。請在 <b>60 秒</b>內，對照上方的系統資料，點出所有有問題的欄位。",
+    sys: ["保單 H260901234", [["被保險人", "林雅婷（與要保人同一人）"], ["契約生效日", "民國 115 年 9 月 1 日"], ["承保內容", "住院醫療日額 2,000 元、手術醫療"], ["醫療保險金受益人", "被保險人本人"]]],
+    foot: "申請書欄位參考保險金申請書（115/04/01 版）製作，診斷證明書與收據為簡化示意，僅供內部訓練使用。醫院、銀行與人名皆為虛構，非真實保戶資訊。"
+  },
+  {
+    tab: "第三關 · 解約申請", name: "第三關", fields: FIELDS3, errors: ERRORS3, options: OPTIONS3,
+    title: "保險單終止契約申請書",
+    intro: "一位年長保戶在一名「理財顧問」的陪同下，到櫃台申請解約。請在 <b>60 秒</b>內，對照上方的系統資料，點出申請書裡所有有問題的地方。這一關是臨櫃攔阻詐騙最常見的情境。",
+    sys: ["保單 W251102345", [["要保人／被保險人", "黃秀琴（69 歲）"], ["保單年度", "第 12 年"], ["預估解約金", "約 1,860,000 元"], ["原留存給付帳戶", "黃秀琴（末四碼 3307）"]]],
+    foot: "欄位參考 POS137 保險單終止契約申請書（2026 年 9 月版）製作，僅供內部訓練使用。人名、銀行與數字皆為虛構，非真實保戶資訊。"
+  }
+];
+let FIELDS, ERRORS, OPTIONS, cur = 0;
+const played = new Set();
+let nextTarget = null;
+
+function setLevel(i) {
+  cur = i;
+  const L = LEVELS[i];
+  FIELDS = L.fields; ERRORS = L.errors; OPTIONS = L.options;
+  $("introEyebrow").textContent = `櫃台受理挑戰 · ${L.name}`;
+  $("introText").innerHTML = L.intro;
+  $("sheetTitle").textContent = L.title;
+  $("sheetFoot").textContent = L.foot;
+  $("sys").innerHTML = `<span class="sys-t">櫃台系統 · ${L.sys[0]} 查詢結果（不可點選）</span><div class="sys-g">${L.sys[1].map(([k, v]) => `<span><small>${k}</small>${v}</span>`).join("")}</div>`;
+  $("resultEyebrow").textContent = `${L.name}結果`;
+  const nb = $("nextBtn");
+  if (i < LEVELS.length - 1) { nb.disabled = false; nb.textContent = `下一關：${LEVELS[i + 1].tab.split(" · ")[1]}`; }
+  else { nb.disabled = true; nb.textContent = "已完成全部關卡"; }
+  $("levels").innerHTML = LEVELS.map((l, j) => `<button type="button" class="lv${j === i ? " on" : ""}" data-lv="${j}" aria-pressed="${j === i}">${played.has(j) ? "✓ " : ""}${l.tab}</button>`).join("");
+  $("levels").querySelectorAll("[data-lv]").forEach((b) => b.addEventListener("click", () => setLevel(Number(b.dataset.lv))));
+  showBest();
+}
+
+const TIME = 60, PENALTY = 3;
+const $ = (id) => document.getElementById(id);
+let state;
+
+function load(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+function save(key, v) { try { localStorage.setItem(key, v); } catch (e) {} }
+
+function showBest() {
+  const b = load(`zhaocha-l${cur + 1}-best`);
+  $("bestLine").textContent = b ? `這台裝置的最高分：${b} 分` : "";
+}
+
+function render() {
+  const g = $("formGrid");
+  g.innerHTML = "";
+  FIELDS.forEach((f) => {
+    if (f.sec) { const s = document.createElement("div"); s.className = "sec"; s.textContent = f.sec; g.appendChild(s); return; }
+    const el = document.createElement("div");
+    el.className = `f ${f.span}${f.half ? " half" : ""}${f.office ? " office" : f.id === "policy" ? " lock" : " click"}`;
+    el.dataset.id = f.id;
+    let v = f.v;
+    el.innerHTML = `<label>${f.label}</label><div class="v${f.v ? "" : " blank"}">${v || "—"}</div>`;
+    if (!f.office && f.id !== "policy") {
+      el.tabIndex = 0;
+      el.setAttribute("role", "button");
+      el.setAttribute("aria-label", `${f.label}：${f.v ? f.v.replace(/<[^>]+>/g, " ") : "空白"}`);
+      el.addEventListener("click", () => pick(f.id, el));
+      el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(f.id, el); } });
+    }
+    g.appendChild(el);
+  });
+}
+
+function fieldEl(id) { return document.querySelector(`.f[data-id="${id}"]`); }
+
+function toast(msg, cls) { const t = $("toast"); t.textContent = msg; t.className = "toast " + (cls || ""); }
+
+function start() {
+  state = { left: TIME * 1000, found: new Set(), score: 0, wrong: 0, running: true, decision: null };
+  render();
+  $("intro").hidden = true; $("result").hidden = true; $("decide").hidden = true;
+  $("hud").hidden = false; $("sheet").hidden = false;
+  $("totalTxt").textContent = ERRORS.length;
+  updateHud();
+  toast("點擊你認為有問題的欄位。");
+  let last = performance.now();
+  clearInterval(state.timer);
+  state.timer = setInterval(() => {
+    const now = performance.now();
+    state.left -= now - last; last = now;
+    if (state.left <= 0) { state.left = 0; finish("時間到！"); }
+    updateHud();
+  }, 100);
+  $("sheet").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function updateHud() {
+  $("timeTxt").textContent = (state.left / 1000).toFixed(1);
+  $("foundTxt").textContent = state.found.size;
+  $("scoreTxt").textContent = state.score;
+  const pct = Math.max(0, state.left / (TIME * 1000) * 100);
+  $("barFill").style.width = pct + "%";
+  $("barFill").classList.toggle("low", pct < 25);
+}
+
+function pick(id, el) {
+  if (!state || !state.running) return;
+  const idx = ERRORS.findIndex((e) => e.fields.includes(id));
+  if (idx === -1) {
+    state.left = Math.max(0, state.left - PENALTY * 1000);
+    state.wrong++;
+    state.score = Math.max(0, state.score - 5);
+    el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+    toast(`這一欄沒有問題，扣 ${PENALTY} 秒、5 分。`, "bad");
+    updateHud();
+    return;
+  }
+  if (state.found.has(idx)) { toast("這個問題已經找到了。"); return; }
+  const err = ERRORS[idx];
+  state.found.add(idx);
+  state.score += err.kind === "r" ? 20 : 10;
+  markError(idx, err.kind);
+  toast(`${err.kind === "r" ? "詐騙警訊" : "一般疏失"}：${err.title}`, "good");
+  updateHud();
+  if (state.found.size === ERRORS.length) finish("全部找到了！");
+}
+
+function markError(idx, cls) {
+  ERRORS[idx].fields.forEach((fid, i) => {
+    const el = fieldEl(fid);
+    el.classList.add(cls === "m" ? "missed" : "found-" + cls);
+    if (i === 0) {
+      const b = document.createElement("span");
+      b.className = "badge pop " + cls;
+      b.textContent = idx + 1;
+      el.appendChild(b);
+    }
+  });
+}
+
+function finish(msg) {
+  if (!state.running) return;
+  state.running = false;
+  clearInterval(state.timer);
+  state.timeLeft = Math.ceil(state.left / 1000);
+  ERRORS.forEach((e, i) => { if (!state.found.has(i)) markError(i, "m"); });
+  toast(`${msg} 虛線框是沒找到的問題，結果頁會逐項說明。`);
+  $("doneBtn").disabled = true;
+  showDecision();
+}
+
+function showDecision() {
+  const box = $("opts");
+  box.innerHTML = "";
+  $("decideFb").hidden = true; $("toResult").hidden = true;
+  OPTIONS.forEach((o, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "opt"; b.textContent = o.t; b.id = "opt" + i;
+    b.addEventListener("click", () => decide(i));
+    box.appendChild(b);
+  });
+  $("decide").hidden = false;
+  $("decide").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function decide(i) {
+  if (state.decision !== null) return;
+  state.decision = i;
+  const o = OPTIONS[i];
+  document.querySelectorAll(".opt").forEach((b, j) => {
+    b.disabled = true;
+    if (j === i) b.classList.add("pick-" + o.grade);
+    else if (OPTIONS[j].grade === "good") b.classList.add("pick-good");
+  });
+  const fb = $("decideFb");
+  fb.textContent = o.fb; fb.hidden = false;
+  $("toResult").hidden = false;
+}
+
+function showResult() {
+  const y = [...state.found].filter((i) => ERRORS[i].kind === "y").length;
+  const r = [...state.found].filter((i) => ERRORS[i].kind === "r").length;
+  const all = state.found.size === ERRORS.length;
+  const dPts = OPTIONS[state.decision].pts;
+  const precise = all && state.wrong <= 2;
+  const timeBonus = precise ? state.timeLeft : 0;
+  const findPts = Math.max(0, y * 10 + r * 20 - state.wrong * 5);
+  const total = findPts + (precise ? 30 : 0) + dPts + timeBonus;
+  const rank = total >= 120 ? "找碴王" : total >= 80 ? "找碴高手" : total >= 40 ? "見習找碴員" : "找碴新手";
+  $("finalScore").textContent = total;
+  $("rankTxt").textContent = rank;
+  const rows = [
+    ["一般疏失", `${y} / ${ERRORS.filter((e) => e.kind === "y").length} × 10`, y * 10],
+    ["詐騙警訊", `${r} / ${ERRORS.filter((e) => e.kind === "r").length} × 20`, r * 20],
+    ["點錯扣分", `${state.wrong} 次 × 5（最低扣到 0）`, findPts - (y * 10 + r * 20)],
+    ["精準加分", precise ? "達成" : "全部找到且點錯 ≤ 2 次", precise ? 30 : 0],
+    ["處理決策", ["危險", "不夠周全", "正確"][["bad", "mid", "good"].indexOf(OPTIONS[state.decision].grade)], dPts],
+    ["剩餘秒數", precise ? `${state.timeLeft} 秒` : "精準加分達成才計算", timeBonus]
+  ];
+  $("breakdown").innerHTML = rows.map(([a, b, c]) => `<span>${a}　<span style="color:var(--muted);font-weight:400">${b}</span></span><span>${c < 0 ? "−" + (-c) : "+" + c}</span>`).join("");
+  $("cards").innerHTML = ERRORS.map((e, i) => {
+    const got = state.found.has(i);
+    return `<div class="card ${e.kind}">
+      <div class="row"><span class="chip ${e.kind}">${i + 1} · ${e.kind === "r" ? "詐騙警訊" : "一般疏失"}</span><span class="chip ${got ? "g" : "n"}">${got ? "你找到了" : "沒找到"}</span></div>
+      <h3>${e.title}</h3>
+      <dl><dt>錯在哪</dt><dd>${e.where}</dd><dt>會造成</dt><dd>${e.impact}</dd><dt>怎麼預防</dt><dd>${e.prevent}</dd></dl>
+    </div>`;
+  }).join("");
+  const autoN = ERRORS.filter((e) => e.auto).length;
+  $("pitch").innerHTML = `<b>作業優化提案：</b>這份申請書的 ${ERRORS.length} 個問題中，有 ${autoN} 個一般疏失可以在送件前由系統自動擋下，保戶不必再跑一趟；另外 ${ERRORS.length - autoN} 個詐騙警訊，系統可以自動標示風險，提醒同仁啟動關懷提問。`;
+  const best = Number(load(`zhaocha-l${cur + 1}-best`) || 0);
+  if (total > best) save(`zhaocha-l${cur + 1}-best`, String(total));
+  played.add(cur);
+  nextTarget = LEVELS.map((_, k) => (cur + 1 + k) % LEVELS.length).find((k) => !played.has(k));
+  if (nextTarget === undefined) nextTarget = null;
+  const nb = $("nextBtn");
+  if (nextTarget !== null) { nb.disabled = false; nb.textContent = `下一關：${LEVELS[nextTarget].tab}`; }
+  else { nb.disabled = true; nb.textContent = "已完成全部關卡"; }
+  $("decide").hidden = true;
+  $("hud").hidden = true;
+  $("result").hidden = false;
+  $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function reset() {
+  $("result").hidden = true; $("sheet").hidden = true; $("decide").hidden = true;
+  $("doneBtn").disabled = false;
+  $("intro").hidden = false;
+  setLevel(cur);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+$("startBtn").addEventListener("click", start);
+$("doneBtn").addEventListener("click", () => finish("找碴完成！"));
+$("toResult").addEventListener("click", showResult);
+$("againBtn").addEventListener("click", reset);
+$("nextBtn").addEventListener("click", () => { if (nextTarget !== null) { setLevel(nextTarget); reset(); } });
+setLevel(0);
+</script>
