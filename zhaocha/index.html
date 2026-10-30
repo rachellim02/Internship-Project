@@ -170,7 +170,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     <div class="rules">
       <div class="rule"><span class="chip y">一般疏失 +10</span><b>漏填、填錯、前後矛盾</b><span>需要補正，現場無法處理的才退件。</span></div>
       <div class="rule"><span class="chip r">詐騙警訊 +20</span><b>看起來合規，但不對勁</b><span>要啟動關懷提問或照會本人。</span></div>
-      <div class="rule"><span class="chip n">點錯 −3 秒、−5 分</span><b>沒問題的欄位不要亂點</b><span>全部找到且點錯不超過 2 次，才有精準加分和剩餘秒數加分。</span></div>
+      <div class="rule"><span class="chip n">點錯 −5 分</span><b>沒問題的欄位不要亂點</b><span>全部找到才有加分：沒點錯 +30、點錯 1～2 次 +15；點錯不超過 2 次才有秒數加分，剩 40 秒以上 +30。</span></div>
     </div>
     <div class="row"><button class="btn" id="startBtn" type="button">開始找碴</button><button class="btn ghost" id="answersBtn" type="button">直接看解答</button><span class="toast" id="bestLine"></span></div>
   </section>
@@ -374,7 +374,7 @@ function setLevel(i) {
   showBest();
 }
 
-const TIME = 60, PENALTY = 3;
+const TIME = 60;
 const $ = (id) => document.getElementById(id);
 let state;
 
@@ -443,11 +443,10 @@ function pick(id, el) {
   if (!state || !state.running) return;
   const idx = ERRORS.findIndex((e) => e.fields.includes(id));
   if (idx === -1) {
-    state.left = Math.max(0, state.left - PENALTY * 1000);
     state.wrong++;
     state.score = Math.max(0, state.score - 5);
     el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
-    toast(`這一欄沒有問題，扣 ${PENALTY} 秒、5 分。`, "bad");
+    toast("這一欄沒有問題，扣 5 分。", "bad");
     updateHud();
     return;
   }
@@ -489,19 +488,20 @@ function showResult() {
   const y = [...state.found].filter((i) => ERRORS[i].kind === "y").length;
   const r = [...state.found].filter((i) => ERRORS[i].kind === "r").length;
   const all = state.found.size === ERRORS.length;
-  const precise = all && state.wrong <= 2;
-  const timeBonus = precise ? state.timeLeft : 0;
+  const t = state.timeLeft;
+  const precBonus = !all ? 0 : state.wrong === 0 ? 30 : state.wrong <= 2 ? 15 : 0;
+  const timeBonus = !all || state.wrong > 2 ? 0 : t >= 40 ? 30 : t >= 25 ? 20 : t >= 10 ? 10 : 0;
   const findPts = Math.max(0, y * 10 + r * 20 - state.wrong * 5);
-  const total = findPts + (precise ? 30 : 0) + timeBonus;
-  const rank = total >= 110 ? "找碴王" : total >= 70 ? "找碴高手" : total >= 40 ? "見習找碴員" : "找碴新手";
+  const total = findPts + precBonus + timeBonus;
+  const rank = total >= 100 ? "找碴王" : total >= 75 ? "找碴高手" : total >= 40 ? "見習找碴員" : "找碴新手";
   $("finalScore").textContent = total;
   $("rankTxt").textContent = rank;
   const rows = [
     ["一般疏失", `${y} / ${ERRORS.filter((e) => e.kind === "y").length} × 10`, y * 10],
     ["詐騙警訊", `${r} / ${ERRORS.filter((e) => e.kind === "r").length} × 20`, r * 20],
     ["點錯扣分", `${state.wrong} 次 × 5（最低扣到 0）`, findPts - (y * 10 + r * 20)],
-    ["精準加分", precise ? "達成" : "全部找到且點錯 ≤ 2 次", precise ? 30 : 0],
-    ["剩餘秒數", precise ? `${state.timeLeft} 秒` : "精準加分達成才計算", timeBonus]
+    ["精準加分", all ? `點錯 ${state.wrong} 次（0 次 +30、1～2 次 +15）` : "全部找到才計算", precBonus],
+    ["剩餘秒數", all && state.wrong <= 2 ? `${t} 秒（40↑ +30、25↑ +20、10↑ +10）` : "全部找到且點錯 ≤ 2 次才計算", timeBonus]
   ];
   $("breakdown").innerHTML = rows.map(([a, b, c]) => `<span>${a}　<span style="color:var(--muted);font-weight:400">${b}</span></span><span>${c < 0 ? "−" + (-c) : "+" + c}</span>`).join("");
   $("cards").innerHTML = ERRORS.map((e, i) => cardHtml(e, i, state.found.has(i))).join("");
